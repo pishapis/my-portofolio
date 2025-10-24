@@ -2,7 +2,7 @@
 
 A sleek, modern, and responsive portfolio bootstrapped with [create-t3-app](https://create.t3.gg/).
 
-[Website Preview](https://github.com/pishapis/my-portofolio/assets/9124-e6d04b17fe93.png)
+[Website Preview](https://github.com/pishapis/my-portofolio/public/assets/9124-e6d04b17fe93.png)
 
 [🔗 Link to portfolio](https://my-porto-pishapis-projects.vercel.app/)
 
