@@ -2,7 +2,7 @@
 
 A sleek, modern, and responsive portfolio website built with Next.js, TypeScript, and Tailwind CSS, bootstrapped with [create-t3-app](https://create.t3.gg/).
 
-![Website Preview](https://raw.githubusercontent.com/pishapis/my-portofolio/main/public/assets/preview.png)
+![Website Preview](https://raw.githubusercontent.com/pishapis/my-portofolio/main/public/assets/9124-e6d04b17fe93.png)
 
 [🔗 Live Demo](https://my-porto-pishapis-projects.vercel.app/)
 
