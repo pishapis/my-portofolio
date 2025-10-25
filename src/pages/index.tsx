@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Container from "@/components/Container";
 import { useEffect, useRef, Suspense, useState } from "react";
 import styles from "@/styles/Home.module.css";
@@ -8,13 +9,15 @@ import {
   ChevronRight,
   Code2,
   Frame,
-  SearchCheck,
   Eye,
   MonitorSmartphone,
   Send,
   Mail,
   User,
-  MessageSquare
+  MessageSquare,
+  Reply,
+  ChevronDown,
+  Clock
 } from "lucide-react";
 import { TriangleDownIcon } from "@radix-ui/react-icons";
 import Spline from "@splinetool/react-spline";
@@ -31,8 +34,16 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import VanillaTilt from "vanilla-tilt";
-import { motion } from "framer-motion";
-import { Comment } from '@/types';
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  type Comment,
+  type FetchCommentsResponse,
+  type PostCommentResponse,
+  type CommentFormData,
+  type ReplyFormData,
+  type MessageState
+} from '@/types';
+
 
 const categories = [
   { name: 'All', value: 'all' },
@@ -176,36 +187,33 @@ const services = [
   },
 ];
 
-interface CommentAPIResponse {
-  _id: string;
-  name: string;
-  email: string;
-  message: string;
-  createdAt: string;
-}
-
-interface FetchCommentsResponse {
-  success: boolean;
-  data?: CommentAPIResponse[];
-}
-
-interface PostCommentResponse {
-  success: boolean;
-  data?: CommentAPIResponse;
-  error?: string;
-}
-
 export default function Home() {
   const refScrollContainer = useRef(null);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [current, setCurrent] = useState<number>(0);
   const [count, setCount] = useState<number>(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentForm, setCommentForm] = useState({ name: '', email: '', message: '' });
+  const [commentForm, setCommentForm] = useState<CommentFormData>({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [replyForm, setReplyForm] = useState<ReplyFormData>({});
+  const [message, setMessage] = useState<MessageState>({
+    text: '',
+    type: ''
+  });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [message, setMessage] = useState<{ text: string; type: string }>({ text: '', type: '' });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activeReply, setActiveReply] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
 
   // handle scroll
   useEffect(() => {
@@ -254,10 +262,30 @@ export default function Home() {
     setCount(carouselApi.scrollSnapList().length);
     setCurrent(carouselApi.selectedScrollSnap() + 1);
 
-    carouselApi.on("select", () => {
+    const handleScroll = () => {
+      const progress = carouselApi.scrollProgress();
+      setScrollProgress(progress);
+
+      setIsScrolling(true);
+      const timeout = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+
+      return () => clearTimeout(timeout);
+    };
+
+    const handleSelect = () => {
       setCurrent(carouselApi.selectedScrollSnap() + 1);
-    });
-  }, [carouselApi]);
+    };
+
+    carouselApi.on("scroll", handleScroll);
+    carouselApi.on("select", handleSelect);
+
+    return () => {
+      carouselApi.off("scroll", handleScroll);
+      carouselApi.off("select", handleSelect);
+    };
+  }, [carouselApi])
 
   // card hover effect
   useEffect(() => {
@@ -302,40 +330,80 @@ export default function Home() {
     },
   };
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const response = await fetch('/api');
-        const data = await response.json() as FetchCommentsResponse;
+  const fetchComments = async (page: number): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/comments?page=${page}&limit=10`);
 
-        if (data.success && data.data) {
-          const transformedComments: Comment[] = data.data.map((comment) => ({
-            id: comment._id,
-            name: comment.name,
-            email: comment.email || '',
-            message: comment.message,
-            date: new Date(comment.createdAt).toLocaleDateString(),
-            time: new Date(comment.createdAt).toLocaleTimeString()
-          }));
+      // Type casting di sini!
+      const data = await response.json() as FetchCommentsResponse;
+
+      // Sekarang TypeScript tahu struktur data
+      if (data.success && data.data) {
+        const transformedComments: Comment[] = data.data.map((comment) => ({
+          id: comment._id,
+          name: comment.name,
+          email: comment.email ?? '',
+          message: comment.message,
+          date: new Date(comment.createdAt).toLocaleDateString(),
+          time: new Date(comment.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          parentId: comment.parentId,
+          replies: comment.replies?.map((reply) => ({
+            id: reply._id,
+            name: reply.name,
+            email: reply.email ?? '',
+            message: reply.message,
+            date: new Date(reply.createdAt).toLocaleDateString(),
+            time: new Date(reply.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            parentId: reply.parentId
+          })) ?? []
+        }));
+
+        if (page === 1) {
           setComments(transformedComments);
+        } else {
+          setComments(prev => [...prev, ...transformedComments]);
         }
-      } catch (error) {
-        console.error('Error loading comments:', error);
-        setMessage({ text: 'Failed to load comments', type: 'error' });
-      }
-    };
 
-    void fetchComments();
-  }, []);
+        if (data.pagination) {
+          setCurrentPage(data.pagination.currentPage);
+          setTotalPages(data.pagination.totalPages);
+          setHasMore(data.pagination.hasMore);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      setMessage({ text: 'Failed to load comments', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setCommentForm({ ...commentForm, [e.target.name]: e.target.value });
   };
 
-  const handleCommentSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleReplyChange = (commentId: string, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setReplyForm({
+      ...replyForm,
+      [commentId]: {
+        ...replyForm[commentId] ?? { name: '', email: '', message: '' },
+        [e.target.name]: e.target.value
+      }
+    });
+  };
+
+  const handleCommentSubmit = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ): Promise<void> => {
     e.preventDefault();
 
-    // Validasi input
     if (!commentForm.name.trim() || !commentForm.message.trim()) {
       setMessage({ text: 'Name and message are required', type: 'error' });
       return;
@@ -345,11 +413,9 @@ export default function Home() {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await fetch('/api', {
+      const response = await fetch('/api/comments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: commentForm.name.trim(),
           email: commentForm.email.trim(),
@@ -357,23 +423,27 @@ export default function Home() {
         }),
       });
 
+      // Type casting!
       const data = await response.json() as PostCommentResponse;
 
       if (response.ok && data.success && data.data) {
         const newComment: Comment = {
           id: data.data._id,
           name: data.data.name,
-          email: data.data.email || '',
+          email: data.data.email ?? '',
           message: data.data.message,
           date: new Date(data.data.createdAt).toLocaleDateString(),
-          time: new Date(data.data.createdAt).toLocaleTimeString()
+          time: new Date(data.data.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          replies: []
         };
 
         setComments([newComment, ...comments]);
         setMessage({ text: 'Comment posted successfully!', type: 'success' });
         setCommentForm({ name: '', email: '', message: '' });
 
-        // Clear success message after 3 seconds
         setTimeout(() => {
           setMessage({ text: '', type: '' });
         }, 3000);
@@ -387,6 +457,93 @@ export default function Home() {
       setIsSubmitting(false);
     }
   };
+
+  const handleReplySubmit = async (commentId: string): Promise<void> => {
+    const reply = replyForm[commentId];
+    if (!reply?.name.trim() || !reply?.message.trim()) {
+      setMessage({ text: 'Name and message are required', type: 'error' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: reply.name.trim(),
+          email: reply.email?.trim(),
+          message: reply.message.trim(),
+          parentId: commentId
+        }),
+      });
+
+      const data = await response.json() as PostCommentResponse;
+
+      if (response.ok && data.success && data.data) {
+        const newReply: Comment = {
+          id: data.data._id,
+          name: data.data.name,
+          email: data.data.email ?? '',
+          message: data.data.message,
+          date: new Date(data.data.createdAt).toLocaleDateString(),
+          time: new Date(data.data.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          parentId: data.data.parentId
+        };
+
+        setComments(comments.map(comment => {
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies ?? []), newReply]
+            };
+          }
+          return comment;
+        }));
+
+        setReplyForm({ ...replyForm, [commentId]: { name: '', email: '', message: '' } });
+        setActiveReply(null);
+        setExpandedComments(new Set([...expandedComments, commentId]));
+        setMessage({ text: 'Reply posted successfully!', type: 'success' });
+
+        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+      } else {
+        setMessage({ text: data.error ?? 'Failed to post reply', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      setMessage({ text: 'Failed to post reply. Please try again.', type: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleReply = (commentId: string) => {
+    setActiveReply(activeReply === commentId ? null : commentId);
+  };
+
+  const toggleReplies = (commentId: string) => {
+    const newExpanded = new Set(expandedComments);
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+    }
+    setExpandedComments(newExpanded);
+  };
+
+  const loadMoreComments = () => {
+    void fetchComments(currentPage + 1);
+  };
+
+  useEffect(() => {
+    void fetchComments(1);
+  }, []);
 
   return (
     <Container>
@@ -674,47 +831,95 @@ export default function Home() {
 
             {/* Carousel */}
             <div className="mt-14">
-              <Carousel setApi={setCarouselApi} className="w-full">
-                <CarouselContent>
-                  {projects.map((project) => (
-                    <CarouselItem key={project.title} className="md:basis-1/2">
-                      <Card id="tilt">
-                        <CardHeader className="p-0">
-                          <Link href={project.href} target="_blank" passHref>
-                            {project.image.endsWith(".webm") ? (
-                              <video
-                                src={project.image}
-                                autoPlay
-                                loop
-                                muted
-                                className="aspect-video h-full w-full rounded-t-md bg-primary object-cover"
-                              />
-                            ) : (
-                              <Image
-                                src={project.image}
-                                alt={project.title}
-                                width={600}
-                                height={300}
-                                quality={100}
-                                className="aspect-video h-full w-full rounded-t-md bg-primary object-cover"
-                              />
-                            )}
-                          </Link>
-                        </CardHeader>
-                        <CardContent className="absolute bottom-0 w-full bg-background/50 backdrop-blur">
-                          <CardTitle className="border-t border-white/5 p-4 text-base font-normal tracking-tighter">
-                            {project.description}
-                          </CardTitle>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  ))}
+              <Carousel
+                setApi={setCarouselApi}
+                className="w-full cursor-grab active:cursor-grabbing"
+                opts={{
+                  align: "start",
+                  loop: true,
+                  dragFree: true,
+                  containScroll: "trimSnaps",
+                }}
+              >
+                <CarouselContent className="-ml-2 md:-ml-4">
+                  {projects.map((project, index) => {
+                    const isActive = index === current - 1;
+
+                    return (
+                      <CarouselItem
+                        key={project.title}
+                        className="pl-2 md:pl-4 md:basis-1/2 select-none"
+                      >
+                        <Card
+                          id="tilt"
+                          className={`transition-all duration-300 ${isScrolling ? 'scale-[0.98]' : 'scale-100'
+                            } ${isActive ? 'opacity-100' : 'opacity-70'
+                            } hover:scale-[1.02]`}
+                        >
+                          <CardHeader className="p-0 overflow-hidden">
+                            <Link
+                              href={project.href}
+                              target="_blank"
+                              passHref
+                              onClick={(e) => {
+                                // Cegah link terbuka saat sedang drag
+                                if (isScrolling) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                              {project.image.endsWith(".webm") ? (
+                                <video
+                                  src={project.image}
+                                  autoPlay
+                                  loop
+                                  muted
+                                  className={`aspect-video h-full w-full rounded-t-md bg-primary object-cover transition-transform duration-500 pointer-events-none ${isActive ? 'scale-100' : 'scale-105'
+                                    }`}
+                                />
+                              ) : (
+                                <Image
+                                  src={project.image}
+                                  alt={project.title}
+                                  width={600}
+                                  height={300}
+                                  quality={100}
+                                  className={`aspect-video h-full w-full rounded-t-md bg-primary object-cover transition-transform duration-500 pointer-events-none ${isActive ? 'scale-100' : 'scale-105'
+                                    }`}
+                                  draggable={false}
+                                />
+                              )}
+                            </Link>
+                          </CardHeader>
+                          <CardContent className={`absolute bottom-0 w-full bg-background/50 backdrop-blur transition-all duration-300 ${isActive ? 'translate-y-0' : 'translate-y-2'
+                            }`}>
+                            <CardTitle className="border-t border-white/5 p-4 text-base font-normal tracking-tighter">
+                              {project.description}
+                            </CardTitle>
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    );
+                  })}
                 </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
+
+                <CarouselPrevious className="hover:scale-110 transition-transform active:scale-95" />
+                <CarouselNext className="hover:scale-110 transition-transform active:scale-95" />
               </Carousel>
+
+              <div className="mt-4 mb-2 w-full bg-muted/30 rounded-full h-1 overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-150 ease-out rounded-full"
+                  style={{
+                    width: `${scrollProgress * 100}%`,
+                    transform: isScrolling ? 'scaleY(1.5)' : 'scaleY(1)'
+                  }}
+                />
+              </div>
+
               <div className="py-2 text-center text-sm text-muted-foreground">
-                <span className="font-semibold">
+                <span className={`font-semibold transition-all duration-200 ${isScrolling ? 'scale-110 text-primary' : 'scale-100'
+                  } inline-block`}>
                   {current} / {count}
                 </span>{" "}
                 projects
@@ -895,32 +1100,194 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="space-y-4"
               >
-                {comments.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No comments yet. Be the first to comment!
+                <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+                </h3>
+
+                {isLoading && comments.length === 0 ? (
+                  <div className="text-center py-12 bg-white/5 backdrop-blur rounded-lg border border-white/10">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading comments...</p>
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-12 bg-white/5 backdrop-blur rounded-lg border border-white/10">
+                    <MessageSquare className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
                   </div>
                 ) : (
-                  comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="rounded-lg bg-white/5 p-6 backdrop-blur transition-all hover:bg-white/10"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <User className="w-5 h-5 text-primary" />
+                  <>
+                    {comments.map((comment, index) => (
+                      <motion.div
+                        key={comment.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="rounded-lg bg-white/5 p-6 backdrop-blur transition-all hover:bg-white/10 border border-white/10"
+                      >
+                        {/* Main Comment */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center shadow-lg">
+                              <User className="w-5 h-5 text-white" />
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground">{comment.name}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              {comment.date} at {comment.time}
-                            </p>
+
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-semibold text-foreground">{comment.name}</h4>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{comment.date} at {comment.time}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="text-muted-foreground leading-relaxed">{comment.message}</p>
+
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={() => toggleReply(comment.id)}
+                                className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors font-medium"
+                              >
+                                <Reply className="w-4 h-4" />
+                                Reply
+                              </button>
+
+                              {comment.replies && comment.replies.length > 0 && (
+                                <button
+                                  onClick={() => toggleReplies(comment.id)}
+                                  className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                                >
+                                  <ChevronDown
+                                    className={`w-4 h-4 transition-transform ${expandedComments.has(comment.id) ? 'rotate-180' : ''
+                                      }`}
+                                  />
+                                  {comment.replies.length} {comment.replies.length === 1 ? 'Reply' : 'Replies'}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Reply Form */}
+                            {activeReply === comment.id && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="mt-4 p-4 bg-background/30 rounded-lg border border-white/10 space-y-3"
+                              >
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={replyForm[comment.id]?.name ?? ''}
+                                  onChange={(e) => handleReplyChange(comment.id, e)}
+                                  placeholder="Your name"
+                                  className="w-full px-3 py-2 bg-background/50 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground placeholder:text-muted-foreground text-sm"
+                                />
+                                <input
+                                  type="email"
+                                  name="email"
+                                  value={replyForm[comment.id]?.email ?? ''}
+                                  onChange={(e) => handleReplyChange(comment.id, e)}
+                                  placeholder="Email (optional)"
+                                  className="w-full px-3 py-2 bg-background/50 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground placeholder:text-muted-foreground text-sm"
+                                />
+                                <textarea
+                                  name="message"
+                                  value={replyForm[comment.id]?.message ?? ''}
+                                  onChange={(e) => handleReplyChange(comment.id, e)}
+                                  rows={3}
+                                  placeholder="Write a reply..."
+                                  className="w-full px-3 py-2 bg-background/50 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none text-foreground placeholder:text-muted-foreground text-sm"
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => handleReplySubmit(comment.id)}
+                                    disabled={isSubmitting}
+                                    size="sm"
+                                  >
+                                    Post Reply
+                                  </Button>
+                                  <Button
+                                    onClick={() => setActiveReply(null)}
+                                    variant="outline"
+                                    size="sm"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </motion.div>
+                            )}
+
+                            {/* Replies List */}
+                            {expandedComments.has(comment.id) && comment.replies && comment.replies.length > 0 && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }} 
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="mt-4 space-y-3 pl-4 border-l-2 border-primary/30"
+                              >
+                                {comment.replies.map((reply) => (
+                                  <motion.div
+                                    key={reply.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="flex gap-3 p-4 bg-background/20 rounded-lg border border-white/10"
+                                  >
+                                    <div className="flex-shrink-0">
+                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/70 to-primary/30 flex items-center justify-center">
+                                        <User className="w-4 h-4 text-white" />
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h5 className="font-semibold text-foreground text-sm">{reply.name}</h5>
+                                        <span className="text-xs text-muted-foreground">
+                                          {reply.date} at {reply.time}
+                                        </span>
+                                      </div>
+                                      <p className="text-muted-foreground text-sm leading-relaxed">{reply.message}</p>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </motion.div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                      <p className="mt-4 text-muted-foreground">{comment.message}</p>
-                    </div>
-                  ))
+                      </motion.div>
+                    ))}
+
+                    {/* Load More Button */}
+                    {hasMore && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="pt-4"
+                      >
+                        <Button
+                          onClick={loadMoreComments}
+                          disabled={isLoading}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          {isLoading ? (
+                            <span className="flex items-center gap-2">
+                              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                              Loading...
+                            </span>
+                          ) : (
+                            <>
+                              Load More Comments ({currentPage} / {totalPages})
+                              <ChevronDown className="ml-2 w-4 h-4" />
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </>
                 )}
               </motion.div>
             </div>
