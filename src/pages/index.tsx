@@ -96,6 +96,12 @@ const projects = [
     title: "My Portofolio",
     description: "My Portfolio version 1.0.1.",
     image: "/assets/projects/porto1-webm.webm",
+    href: "https://github.com/pishapis/my-porto",
+  },
+  {
+    title: "My Portofolio",
+    description: "My Portfolio version 1.0.2.",
+    image: "/assets/projects/porto2-webm.webm",
     href: "https://my-porto-pishapis-projects.vercel.app/",
   },
   {
