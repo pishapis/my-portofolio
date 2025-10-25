@@ -11,6 +11,10 @@ import {
   SearchCheck,
   Eye,
   MonitorSmartphone,
+  Send,
+  Mail,
+  User,
+  MessageSquare
 } from "lucide-react";
 import { TriangleDownIcon } from "@radix-ui/react-icons";
 import Spline from "@splinetool/react-spline";
@@ -28,6 +32,7 @@ import {
 } from "@/components/ui/carousel";
 import VanillaTilt from "vanilla-tilt";
 import { motion } from "framer-motion";
+import { Comment } from '@/types';
 
 const categories = [
   { name: 'All', value: 'all' },
@@ -41,69 +46,154 @@ const categories = [
 
 const projects = [
   {
-    title: "Unqueue",
-    description: "E-commerce platform for selling digital products",
-    image: "/assets/unqueue.webm",
-    href: "https://unqueue.shop/",
+    title: "Montera",
+    description: "A digital map service empowering the sugarcane industry with fast, data-driven decisions through spatial analytics.",
+    image: "/assets/projects/akara-webm.webm",
+    href: "https://montera-alpha.digii.co.id/",
   },
   {
-    title: "InfiniteVPS",
-    description: "High performance VPS hosting solution",
-    image: "/assets/infinitevps.webm",
+    title: "ETERA",
+    description: "ETERA is a digital ecosystem that enhances integration, accuracy, expertise, and efficiency to achieve National Sugar Self-Sufficiency.",
+    image: "/assets/projects/etera-webm.webm",
+    href: "https://etera.co.id/",
+  },
+  {
+    title: "Bitres",
+    description: "BITRES creates innovative solutions to complex challenges, fostering positive social and environmental impact.",
+    image: "/assets/projects/bitres-webm.webm",
+    href: "https://bitres.digii.co.id/",
+  },
+  {
+    title: "Agent AI",
+    description: "Agent AI boosts productivity and insights through smart data management and analysis.",
+    image: "/assets/projects/agentai-webm.webm",
+    href: "https://agentai.digii.co.id/",
+  },
+  {
+    title: "AMS Certification",
+    description: "Monitoring of PTPN Group Land Asset Certification",
+    image: "/assets/projects/ams-webm.webm",
+    href: "https://ams.digii.co.id/",
+  },
+  {
+    title: "E-STDB National Monitoring Dashboard",
+    description: "E-STDB National Monitoring Dashboard for Palm Oil Commodities.",
+    image: "/assets/projects/dashnas-webm.webm",
+    href: "https://dashnas.ditjenbun.digii.co.id/",
+  },
+  {
+    title: "My Portofolio",
+    description: "My Portfolio version 1.0.1.",
+    image: "/assets/projects/porto1-webm.webm",
+    href: "https://my-porto-pishapis-projects.vercel.app/",
+  },
+  {
+    title: "Etera Mobile",
+    description: "ETERA is a digital ecosystem enhancing integration, accuracy, and efficiency to achieve National Sugar Self-Sufficiency.",
+    image: "/assets/projects/mobile bg 1.webp",
     href: "#",
   },
   {
-    title: "TranslateBot",
-    description: "Powerful Multilingual Translation Bot for Discord",
-    image: "/assets/translate_bot.webm",
-    href: "https://translatebot.app/",
+    title: "KPI Performance",
+    description: "A KPI dashboard visualizes key metrics for quick analysis and data-driven performance improvement.",
+    image: "/assets/projects/kpi-sgn1.webp",
+    href: "https://kpi-sgn.digii.co.id/",
   },
   {
-    title: "Wrona",
-    description: "Robotics-focused technology company",
-    image: "/assets/wrona.jpeg",
-    href: "https://www.wrona.com/",
+    title: "Health Screening",
+    description: "Simkeswa enables easy monitoring, risk analysis, and data-driven decisions for better maternal care.",
+    image: "/assets/projects/simkeswa3.webp",
+    href: "https://skrining.digii.co.id/",
   },
   {
-    title: "This website",
-    description: "My personal website",
-    image: "/assets/portfolio.webm",
-    href: "https://github.com/pishapis",
+    title: "People Analytics",
+    description: "Monitors employee data for HR needs, covering ratios, headcount, development costs, maturity, and compliance.",
+    image: "/assets/projects/people-dahsboard.webp",
+    href: "http://people-analytic.digii.co.id/",
+  },
+  {
+    title: "Palm Oil Detection",
+    description: "Palm tree detection using models that have been trained, namely satellite image models and aerial photos.",
+    image: "/assets/projects/palm-result.webp",
+    href: "https://palm-akara.digii.co.id/",
+  },
+  {
+    title: "Gotara",
+    description: "Application Farm Managament System : Maggot",
+    image: "/assets/projects/gotara-login.webp",
+    href: "#",
+  },
+  {
+    title: "The B Andara City",
+    description: "Housing buying and selling application and home building services",
+    image: "/assets/projects/theb-home.webp",
+    href: "#",
+  },
+  {
+    title: "POS (Point Of Sale)",
+    description: "Cashier application with full features, barcode scanning, stock management, etc.",
+    image: "/assets/projects/bintang-produk.webp",
+    href: "https://github.com/pishapis/POS-Laravel-10/tree/master",
+  },
+  {
+    title: "MGBOX Warehouse System",
+    description: "Application Wharehouse Managament System",
+    image: "/assets/projects/mgbox-login.webp",
+    href: "https://mgboxyogya.com/",
   },
 ];
 
 const services = [
   {
-    service: "Frontend Development",
+    service: "Full-Stack Development",
     description:
-      "Creating stellar user interfaces and web experiences using the latest technologies.",
+      "Building modern web apps with React, Next.js, Laravel, and Node.js from end to end.",
     icon: Code2,
   },
   {
-    service: "UX Design",
+    service: "Mobile Development",
     description:
-      "Building intuitive, user-centric designs that drive engagement and conversion.",
-    icon: Frame,
-  },
-  {
-    service: "SEO Optimization",
-    description:
-      "Enhancing your website's visibility in search engines for increased organic traffic.",
-    icon: SearchCheck,
+      "Creating cross-platform mobile apps with Flutter for smooth user experiences.",
+    icon: MonitorSmartphone,
   },
   {
     service: "Responsive Design",
     description:
-      "Designing websites that look and perform equally well on all devices and screen sizes.",
+      "Crafting websites that look great and work flawlessly on any device.",
     icon: MonitorSmartphone,
   },
   {
-    service: "Backend Development",
+    service: "WordPress Development",
     description:
-      "Developing robust, scalable server-side logic for a wide range of web applications.",
+      "Building custom WordPress sites with SEO optimization and tailored plugins.",
+    icon: Frame,
+  },
+  {
+    service: "Cloud & DevOps",
+    description:
+      "Deploying scalable solutions with AWS, Docker, and modern DevOps practices.",
     icon: Eye,
   },
 ];
+
+interface CommentAPIResponse {
+  _id: string;
+  name: string;
+  email: string;
+  message: string;
+  createdAt: string;
+}
+
+interface FetchCommentsResponse {
+  success: boolean;
+  data?: CommentAPIResponse[];
+}
+
+interface PostCommentResponse {
+  success: boolean;
+  data?: CommentAPIResponse;
+  error?: string;
+}
 
 export default function Home() {
   const refScrollContainer = useRef(null);
@@ -111,6 +201,11 @@ export default function Home() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [current, setCurrent] = useState<number>(0);
   const [count, setCount] = useState<number>(0);
+
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentForm, setCommentForm] = useState({ name: '', email: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [message, setMessage] = useState<{ text: string; type: string }>({ text: '', type: '' });
 
   // handle scroll
   useEffect(() => {
@@ -141,7 +236,6 @@ export default function Home() {
 
         if (li.getAttribute("href") === `#${current}`) {
           li.classList.add("nav-active");
-          console.log(li.getAttribute("href"));
         }
       });
     }
@@ -178,7 +272,6 @@ export default function Home() {
     });
   }, []);
 
-
   const handleDownloadCV = () => {
     window.open('/assets/cv/Resume Muhammad Hafidz Ibnu Adi.pdf', '_blank');
   };
@@ -207,6 +300,92 @@ export default function Home() {
       scale: 1,
       transition: { duration: 0.3 },
     },
+  };
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await fetch('/api');
+        const data = await response.json() as FetchCommentsResponse;
+
+        if (data.success && data.data) {
+          const transformedComments: Comment[] = data.data.map((comment) => ({
+            id: comment._id,
+            name: comment.name,
+            email: comment.email || '',
+            message: comment.message,
+            date: new Date(comment.createdAt).toLocaleDateString(),
+            time: new Date(comment.createdAt).toLocaleTimeString()
+          }));
+          setComments(transformedComments);
+        }
+      } catch (error) {
+        console.error('Error loading comments:', error);
+        setMessage({ text: 'Failed to load comments', type: 'error' });
+      }
+    };
+
+    void fetchComments();
+  }, []);
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setCommentForm({ ...commentForm, [e.target.name]: e.target.value });
+  };
+
+  const handleCommentSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    // Validasi input
+    if (!commentForm.name.trim() || !commentForm.message.trim()) {
+      setMessage({ text: 'Name and message are required', type: 'error' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      const response = await fetch('/api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: commentForm.name.trim(),
+          email: commentForm.email.trim(),
+          message: commentForm.message.trim(),
+        }),
+      });
+
+      const data = await response.json() as PostCommentResponse;
+
+      if (response.ok && data.success && data.data) {
+        const newComment: Comment = {
+          id: data.data._id,
+          name: data.data.name,
+          email: data.data.email || '',
+          message: data.data.message,
+          date: new Date(data.data.createdAt).toLocaleDateString(),
+          time: new Date(data.data.createdAt).toLocaleTimeString()
+        };
+
+        setComments([newComment, ...comments]);
+        setMessage({ text: 'Comment posted successfully!', type: 'success' });
+        setCommentForm({ name: '', email: '', message: '' });
+
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setMessage({ text: '', type: '' });
+        }, 3000);
+      } else {
+        setMessage({ text: data.error ?? 'Failed to post comment', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      setMessage({ text: 'Failed to post comment. Please try again.', type: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -445,6 +624,7 @@ export default function Home() {
                         src={skill.icon}
                         alt={skill.name}
                         fill
+                        sizes="64px"
                         className="object-contain"
                       />
                     </div>
@@ -570,8 +750,8 @@ export default function Home() {
                   </span>
                 </h2>
                 <p className="mt-2 tracking-tighter text-secondary-foreground">
-                  Here are some of the services I offer. If you have any
-                  questions, feel free to reach out.
+                  Here are some of the services I provide.
+                  Don&apos;t hesitate to get in touch if you need more information.
                 </p>
               </div>
               {services.map((service) => (
@@ -598,19 +778,152 @@ export default function Home() {
             data-scroll
             data-scroll-speed=".4"
             data-scroll-position="top"
-            className="flex flex-col items-center justify-center rounded-lg bg-gradient-to-br from-primary/[6.5%] to-white/5 px-8 py-16 text-center xl:py-24"
+            className="space-y-16"
           >
-            <h2 className="text-4xl font-medium tracking-tighter xl:text-6xl">
-              Let&apos;s work{" "}
-              <span className="text-gradient clash-grotesk">together.</span>
-            </h2>
-            <p className="mt-1.5 text-base tracking-tight text-muted-foreground xl:text-lg">
-              I&apos;m currently available for freelance work and open to
-              discussing new projects.
-            </p>
-            <Link href="mailto:hapisadi12@gmail.com" passHref>
-              <Button className="mt-6">Get in touch</Button>
-            </Link>
+            {/* Contact Info */}
+            <div className="flex flex-col items-center justify-center rounded-lg bg-gradient-to-br from-primary/[6.5%] to-white/5 px-8 py-16 text-center xl:py-24">
+              <h2 className="text-4xl font-medium tracking-tighter xl:text-6xl">
+                Let&apos;s work{" "}
+                <span className="text-gradient clash-grotesk">together.</span>
+              </h2>
+              <p className="mt-4 text-base tracking-tight text-muted-foreground xl:text-lg max-w-2xl">
+                I&apos;m currently available for freelance work and open to
+                discussing new projects.
+              </p>
+              <Link href="mailto:hapisadi12@gmail.com" passHref>
+                <Button className="mt-6" suppressHydrationWarning>
+                  Get in touch <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Comments Section */}
+            <div className="space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-3xl font-medium tracking-tight xl:text-5xl">
+                  <span className="text-gradient clash-grotesk">&lt;/Comments&gt;</span>
+                </h2>
+                <p className="mt-2 text-muted-foreground">Leave your thoughts and feedback</p>
+              </motion.div>
+
+              {/* Comment Form */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="rounded-lg bg-white/5 p-6 backdrop-blur xl:p-8"
+              >
+                {message.text && (
+                  <div className={`mb-4 rounded-lg p-4 ${message.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                    {message.text}
+                  </div>
+                )}
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <User className="w-4 h-4 text-primary" />
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={commentForm.name}
+                      onChange={handleCommentChange}
+                      required
+                      placeholder="Your name"
+                      className="w-full px-4 py-3 bg-background/50 backdrop-blur border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-primary" />
+                      Email (optional)
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={commentForm.email}
+                      onChange={handleCommentChange}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3 bg-background/50 backdrop-blur border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                      Message *
+                    </label>
+                    <textarea
+                      name="message"
+                      value={commentForm.message}
+                      onChange={handleCommentChange}
+                      required
+                      rows={5}
+                      placeholder="Leave a comment..."
+                      className="w-full px-4 py-3 bg-background/50 backdrop-blur border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleCommentSubmit}
+                    disabled={isSubmitting}
+                    className="w-full group"
+                  >
+                    {isSubmitting ? (
+                      <span className="animate-pulse">Submitting...</span>
+                    ) : (
+                      <>
+                        {'Submit Comment'}
+                        <Send className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+
+              {/* Comments List */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="space-y-4"
+              >
+                {comments.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No comments yet. Be the first to comment!
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="rounded-lg bg-white/5 p-6 backdrop-blur transition-all hover:bg-white/10"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">{comment.name}</h4>
+                            <p className="text-xs text-muted-foreground">
+                              {comment.date} at {comment.time}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-muted-foreground">{comment.message}</p>
+                    </div>
+                  ))
+                )}
+              </motion.div>
+            </div>
           </div>
         </section>
       </div>

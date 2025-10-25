@@ -5,6 +5,8 @@ import "@/styles/locomotive-scroll.css";
 
 import { DM_Sans } from "next/font/google";
 
+import "../lib/suppress-hydration";
+
 const dmSans = DM_Sans({
   display: "swap",
   subsets: ["latin"],

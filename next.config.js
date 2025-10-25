@@ -16,9 +16,23 @@ const withPWA = WithPWA({
 /**
  * @type {import('next').NextConfig}
  */
+
 // @ts-ignore
 const config = withPWA({
   reactStrictMode: true,
+
+  // Suppress hydration warnings dari browser extensions
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
+  // Image optimization
+  images: {
+    domains: [],
+    formats: ['image/avif', 'image/webp'],
+  },
 
   /**
    * If you are using `appDir` then you must comment the below `i18n` config out.

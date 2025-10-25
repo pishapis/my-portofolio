@@ -30,3 +30,20 @@ export interface Experience {
   duration: string;
   description: string;
 }
+
+export interface Comment {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  date: string;
+  time: string;
+}
+
+export interface CommentAPIResponse {
+  _id: string;
+  name: string;
+  email?: string;
+  message: string;
+  createdAt: string;
+}
